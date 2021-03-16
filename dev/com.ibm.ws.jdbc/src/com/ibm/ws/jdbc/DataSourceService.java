@@ -18,7 +18,6 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLNonTransientException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -33,12 +32,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
+import javax.resource.ResourceException;
 import javax.resource.spi.ManagedConnectionFactory;
 import javax.resource.spi.TransactionSupport.TransactionSupportLevel;
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
-import javax.resource.ResourceException;
 
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.Version;
@@ -659,8 +658,7 @@ public class DataSourceService extends AbstractConnectionFactoryService implemen
             isUCP = vendorImplClassName.startsWith("oracle.ucp");
             if (isUCP) {
                 if (!createdDefaultConnectionManager && !sentUCPConnMgrPropsIgnoredInfoMessage) {
-                    Set<String> connMgrPropsAllowed = new HashSet<String> (Arrays.asList("enableSharingForDirectLookups", ConnectionManagerService.ENABLE_CONTAINER_AUTH_FOR_DIRECT_LOOKUPS));
-                    Tr.info(tc, "DSRA4013.ignored.connection.manager.config.used", connMgrPropsAllowed);
+                    Tr.info(tc, "DSRA4013.ignored.connection.manager.config.used", Arrays.asList("enableSharingForDirectLookups", ConnectionManagerService.ENABLE_CONTAINER_AUTH_FOR_DIRECT_LOOKUPS));
                     sentUCPConnMgrPropsIgnoredInfoMessage = true;
                 }
                 updateConfigForUCP(wProps);
