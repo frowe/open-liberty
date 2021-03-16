@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2020 IBM Corporation and others.
+ * Copyright (c) 2011, 2021 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -75,6 +75,11 @@ public abstract class ConnectionManagerService extends Observable {
      * Name of property controlling the number of connections to cache per thread local.
      */
     public static final String NUM_CONNECTIONS_PER_THREAD_LOCAL = "numConnectionsPerThreadLocal";
+
+    /**
+     * Name of property controlling the authentication mechanism of connections.
+     */
+    public static final String ENABLE_CONTAINER_AUTH_FOR_DIRECT_LOOKUPS = "enableContainerAuthForDirectLookups";
 
     /**
      * List of connectionManager properties.

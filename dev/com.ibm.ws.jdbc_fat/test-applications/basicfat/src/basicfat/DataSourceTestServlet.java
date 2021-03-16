@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2020 IBM Corporation and others.
+ * Copyright (c) 2019, 2021 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -1210,6 +1210,24 @@ public class DataSourceTestServlet extends FATServlet {
             tran.rollback();
         } finally {
             con2.close();
+            con.close();
+        }
+    }
+
+    /**
+     * Verify that connections are CONTAINER auth when enableContainerAuthForDirectLookups=true
+     */
+    public void testEnableContainerAuthForDirectLookupsTrue() throws Exception {
+        DataSource ds = (DataSource) new InitialContext().lookup("jdbc/dsfat12");
+        Connection con = null;
+        try {
+            con = ds.getConnection();
+            // user should be dbuser2
+            DatabaseMetaData metadata = con.getMetaData();
+            String user = metadata.getUserName();
+            if (!"dbuser2".equalsIgnoreCase(user))
+                throw new Exception("Connection is using APPLICATION res-auth - enableContainerAuthForDirectLookups property is not being honored. ");
+        } finally {
             con.close();
         }
     }
