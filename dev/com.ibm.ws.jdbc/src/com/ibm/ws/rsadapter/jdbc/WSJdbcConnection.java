@@ -492,8 +492,37 @@ public class WSJdbcConnection extends WSJdbcObject implements Connection {
      */
     protected SQLException closeWrapper(boolean closeWrapperOnly) 
     {
+        final boolean isTraceOn = TraceComponent.isAnyTracingEnabled();
+
         // Looking for the public close method?  Try WSJdbcObject.
-        SQLException sqlX = null; 
+        SQLException sqlX = null;
+
+        if (mcf.isCustomHelper && managedConn != null && managedConn.getHandleCount() == 1)
+            try
+            {
+                // Remove the wrapper for supplemental trace before invoking a custom helper
+                // because the java.sql.Connection wrapper prevents access to vendor APIs
+                // that might be used by the custom helper.
+                Connection conn =
+                    mcf.isCustomHelper ? (Connection) WSJdbcTracer.getImpl(connImpl) : connImpl;
+
+                boolean conCleanupPerformed = mcf.dataStoreHelper.doConnectionCleanupPerCloseConnection(conn, false, null);
+
+                if (isTraceOn && tc.isDebugEnabled())
+                    Tr.debug(tc, "doConnectionCleanupPerCloseConnection", mcf.dataStoreHelper, managedConn, connImpl, conCleanupPerformed);
+
+                managedConn.perCloseCleanupNeeded = false;
+            }
+            catch (Throwable x)
+            {
+                if (isTraceOn && tc.isDebugEnabled())
+                    Tr.debug(tc, "doConnectionCleanupPerCloseConnection", x);
+
+                if (x instanceof SQLException)
+                    sqlX =  WSJdbcUtil.mapException(this, (SQLException) x);
+                else
+                    sqlX = new SQLException(x.getMessage(), null, 999999); // 999999 matches legacy behavior
+            }
 
         // Send a Connection Closed Event to notify the Managed Connection of the close -- if
         // we are associated with a ManagedConnection to notify.
@@ -2537,7 +2566,12 @@ public class WSJdbcConnection extends WSJdbcObject implements Connection {
         // - in order to free up memory, parameters are cleared before caching instead of after
         if (managedConn.resetStmtsInCacheOnRemove)
         {
-            mcf.getHelper().doStatementCleanup(cstmt);
+            if (mcf.dataStoreHelper == null)
+                mcf.getHelper().doStatementCleanup(cstmt);
+            else
+                mcf.dataStoreHelper.doStatementCleanup(mcf.isCustomHelper ?
+                                (CallableStatement) WSJdbcTracer.getImpl(cstmt) :
+                                cstmt);
         }
         return cstmt;
     }
@@ -2558,7 +2592,12 @@ public class WSJdbcConnection extends WSJdbcObject implements Connection {
         // - in order to free up memory, parameters are cleared before caching instead of after
         if (managedConn.resetStmtsInCacheOnRemove)
         {
-            mcf.getHelper().doStatementCleanup(pstmt);
+            if (mcf.dataStoreHelper == null)
+                mcf.getHelper().doStatementCleanup(pstmt);
+            else
+                mcf.dataStoreHelper.doStatementCleanup(mcf.isCustomHelper ?
+                                (PreparedStatement) WSJdbcTracer.getImpl(pstmt) :
+                                pstmt);
         }
 
         return pstmt;

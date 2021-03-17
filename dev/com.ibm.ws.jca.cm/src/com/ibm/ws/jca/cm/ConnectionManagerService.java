@@ -82,6 +82,12 @@ public abstract class ConnectionManagerService extends Observable {
     public static final String ENABLE_CONTAINER_AUTH_FOR_DIRECT_LOOKUPS = "enableContainerAuthForDirectLookups";
 
     /**
+     * Name of property controlling whether sharable connection handles for a non-DissociatableManagedConnection
+     * can be temporarily associated (parked) to a dedicated unused ManagedConnection.
+     */
+    public static final String TEMPORARILY_ASSOCIATE_IF_DISSOCIATE_UNAVAILABLE = "temporarilyAssociateIfDissociateUnavailable";
+
+    /**
      * List of connectionManager properties.
      */
     public static final List<String> CONNECTION_MANAGER_PROPS = Collections.unmodifiableList(Arrays.asList(
@@ -96,7 +102,8 @@ public abstract class ConnectionManagerService extends Observable {
                                                                                                            MIN_POOL_SIZE,
                                                                                                            NUM_CONNECTIONS_PER_THREAD_LOCAL,
                                                                                                            J2CConstants.POOL_PurgePolicy,
-                                                                                                           J2CConstants.POOL_ReapTime));
+                                                                                                           J2CConstants.POOL_ReapTime,
+                                                                                                           TEMPORARILY_ASSOCIATE_IF_DISSOCIATE_UNAVAILABLE));
 
     /**
      * List of connectionManager properties whose names were taken from DataSourceDefinition. To be

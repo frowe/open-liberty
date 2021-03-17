@@ -31,7 +31,6 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.Transaction.UOWCoordinator;
 import com.ibm.ws.Transaction.UOWCurrent;
 import com.ibm.ws.jca.cm.AbstractConnectionFactoryService;
-import com.ibm.ws.jdbc.heritage.AccessIntent;
 import com.ibm.ws.resource.ResourceRefInfo;
 import com.ibm.ws.rsadapter.AdapterUtil;
 import com.ibm.ws.rsadapter.DSConfig;
@@ -61,7 +60,6 @@ public class DB2Helper extends DatabaseHelper {
     static int JDBC = 1; 
     static int SQLJ = 2; 
     int connType = 0; 
-    private transient PrintWriter db2Pw; 
 
     /**
      * Construct a helper class for common DB2 behavior. Do not instantiate this class directly.
@@ -72,6 +70,7 @@ public class DB2Helper extends DatabaseHelper {
     DB2Helper(WSManagedConnectionFactoryImpl mcf) throws Exception {
         super(mcf);
 
+        mcf.defaultIsolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
         mcf.doesStatementCacheIsoLevel = true;
         mcf.supportsGetTypeMap = false;
 
@@ -190,11 +189,6 @@ public class DB2Helper extends DatabaseHelper {
             Tr.exit(this, tc, "doConnectionSetup");
     }
 
-    @Override
-    public int getIsolationLevel(AccessIntent unused) {
-        return Connection.TRANSACTION_REPEATABLE_READ;
-    }
-
     /**
      * Feature WS14621 
      * 
@@ -241,12 +235,12 @@ public class DB2Helper extends DatabaseHelper {
         // and most likely the setting will be serially, even if its not,
         // it shouldn't matter here (tracing).
 
-        if (db2Pw == null) {
-            db2Pw = new PrintWriter(new TraceWriter(db2Tc), true);
+        if (genPw == null) {
+            genPw = new PrintWriter(new TraceWriter(db2Tc), true);
         }
         if (trace && tc.isDebugEnabled())
-            Tr.debug(this, tc, "returning", db2Pw);
-        return db2Pw;
+            Tr.debug(this, tc, "returning", genPw);
+        return genPw;
     }
 
     /**

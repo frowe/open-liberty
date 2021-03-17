@@ -25,7 +25,6 @@ import javax.sql.XADataSource;
 import com.ibm.ejs.cm.logger.TraceWriter;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
-import com.ibm.ws.jdbc.heritage.AccessIntent;
 import com.ibm.ws.rsadapter.AdapterUtil;
 import com.ibm.ws.rsadapter.jdbc.WSJdbcStatement; 
 
@@ -37,7 +36,6 @@ public class SybaseHelper extends DatabaseHelper
     private static final TraceComponent tc = Tr.register(SybaseHelper.class, "RRA", AdapterUtil.NLS_FILE); 
     @SuppressWarnings("deprecation")
     private transient com.ibm.ejs.ras.TraceComponent sybaseTc = com.ibm.ejs.ras.Tr.register("com.ibm.ws.sybase.logwriter", "WAS.database", null);
-    private transient PrintWriter sybasePw = null;
 
     /**
      * Construct a helper class for Sybase.
@@ -47,6 +45,7 @@ public class SybaseHelper extends DatabaseHelper
     SybaseHelper(WSManagedConnectionFactoryImpl mcf) {
         super(mcf);
 
+        mcf.defaultIsolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
         mcf.supportsGetTypeMap = false;
     }
     
@@ -126,11 +125,6 @@ public class SybaseHelper extends DatabaseHelper
     }
 
     @Override
-    public int getIsolationLevel(AccessIntent unused) {
-        return Connection.TRANSACTION_REPEATABLE_READ;
-    }
-
-    @Override
     public void doStatementCleanup(PreparedStatement stmt) throws SQLException {
         // Sybase doesn't support cursor name. Cursor name will
         // be reset when the result set is closed.
@@ -156,12 +150,12 @@ public class SybaseHelper extends DatabaseHelper
         //not synchronizing here since there will be one helper
         // and most likely the setting will be serially, even if its not, 
         // it shouldn't matter here (tracing).
-        if (sybasePw == null)
-            sybasePw = new PrintWriter(new TraceWriter(sybaseTc), true);
+        if (genPw == null)
+            genPw = new PrintWriter(new TraceWriter(sybaseTc), true);
 
         if (trace && tc.isDebugEnabled())
-            Tr.debug(this, tc, "returning", sybasePw);
-        return sybasePw;
+            Tr.debug(this, tc, "returning", genPw);
+        return genPw;
     }
 
     /**
@@ -210,7 +204,7 @@ public class SybaseHelper extends DatabaseHelper
             super.gatherAndDisplayMetaDataInfo(conn, mcf);                 
         } catch (SQLException x)
         {
-            if (isConnectionError(x))
+            if (mcf.dataStoreHelper == null ? isConnectionError(x) : mcf.dataStoreHelper.isConnectionError(x))
                 throw x;
 
             Tr.info(tc, "META_DATA_EXCEPTION", x.getMessage());

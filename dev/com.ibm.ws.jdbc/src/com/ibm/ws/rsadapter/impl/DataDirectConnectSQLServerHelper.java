@@ -30,7 +30,6 @@ import com.ibm.ejs.cm.logger.TraceWriter;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.ffdc.FFDCFilter;
-import com.ibm.ws.jdbc.heritage.AccessIntent;
 import com.ibm.ws.rsadapter.AdapterUtil;
 import com.ibm.ws.rsadapter.jdbc.WSJdbcTracer;
 
@@ -64,8 +63,6 @@ public class DataDirectConnectSQLServerHelper extends DatabaseHelper {
 
     @SuppressWarnings("deprecation")
     private transient com.ibm.ejs.ras.TraceComponent sqlserverTc = com.ibm.ejs.ras.Tr.register("com.ibm.ws.sqlserver.logwriter", "WAS.database", null);
-
-    private transient PrintWriter sqlServerPW;
 
     /**
      * SQLException error codes from the DataDirect Connect JDBC driver that indicate a stale connection.
@@ -101,6 +98,8 @@ public class DataDirectConnectSQLServerHelper extends DatabaseHelper {
      */
     DataDirectConnectSQLServerHelper(WSManagedConnectionFactoryImpl mcf) {
         super(mcf);
+
+        mcf.defaultIsolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // Default values for the statement properties LongDataCacheSize and QueryTimeout are
         // configurable as data source properties. These data source properties are supplied to
@@ -281,11 +280,6 @@ public class DataDirectConnectSQLServerHelper extends DatabaseHelper {
            Tr.exit(this, tc, "doStatementCleanup");  
     }
 
-    @Override
-    public int getIsolationLevel(AccessIntent unused) {
-        return Connection.TRANSACTION_REPEATABLE_READ;
-    }
-
     /**
      * @return NULL because the DataDirect Connect JDBC driver provides sufficient trace of its own.
      */
@@ -341,11 +335,11 @@ public class DataDirectConnectSQLServerHelper extends DatabaseHelper {
         //not synchronizing here since there will be one helper
         // and most likely the setting will be serially, even if its not, 
         // it shouldn't matter here (tracing).
-        if (sqlServerPW == null) {
-            sqlServerPW = new PrintWriter(new TraceWriter(sqlserverTc), true);
+        if (genPw == null) {
+            genPw = new PrintWriter(new TraceWriter(sqlserverTc), true);
         }
-        Tr.debug(sqlserverTc, "returning", sqlServerPW);
-        return sqlServerPW;
+        Tr.debug(sqlserverTc, "returning", genPw);
+        return genPw;
     }
 
     /**

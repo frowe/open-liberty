@@ -25,7 +25,6 @@ import javax.resource.ResourceException;
 import com.ibm.ejs.cm.logger.TraceWriter;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
-import com.ibm.ws.jdbc.heritage.AccessIntent;
 import com.ibm.ws.rsadapter.AdapterUtil;
 import com.ibm.ws.rsadapter.jdbc.WSJdbcStatement; 
 
@@ -36,7 +35,6 @@ public class InformixHelper extends DatabaseHelper {
     private static final TraceComponent tc = Tr.register(InformixHelper.class, "RRA", AdapterUtil.NLS_FILE); 
     @SuppressWarnings("deprecation")
     private transient com.ibm.ejs.ras.TraceComponent infxTc = com.ibm.ejs.ras.Tr.register("com.ibm.ws.informix.logwriter", "WAS.database", null);
-    private transient PrintWriter ifxPw = null;
 
     /**
      * Construct a helper class for the Informix JDBC driver.
@@ -45,6 +43,8 @@ public class InformixHelper extends DatabaseHelper {
      */
     InformixHelper(WSManagedConnectionFactoryImpl mcf) {
         super(mcf);
+
+        mcf.defaultIsolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
     }
     
     @Override
@@ -75,20 +75,15 @@ public class InformixHelper extends DatabaseHelper {
     }
 
     @Override
-    public int getIsolationLevel(AccessIntent unused) {
-        return Connection.TRANSACTION_REPEATABLE_READ;
-    }
-
-    @Override
     public PrintWriter getPrintWriter() throws ResourceException {
         //not synchronizing here since there will be one helper
         // and most likely the setting will be serially, even if its not, 
         // it shouldn't matter here (tracing).
-        if (ifxPw == null) {
-            ifxPw = new java.io.PrintWriter(new TraceWriter(infxTc), true);
+        if (genPw == null) {
+            genPw = new java.io.PrintWriter(new TraceWriter(infxTc), true);
         }
-        Tr.debug(infxTc, "returning", ifxPw);
-        return ifxPw;
+        Tr.debug(infxTc, "returning", genPw);
+        return genPw;
     }
 
     /**

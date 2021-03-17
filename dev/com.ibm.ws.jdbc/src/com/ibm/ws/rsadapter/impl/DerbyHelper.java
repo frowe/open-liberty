@@ -25,7 +25,6 @@ import javax.resource.ResourceException;
 import com.ibm.ejs.cm.logger.TraceWriter;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
-import com.ibm.ws.jdbc.heritage.AccessIntent;
 
 /**
  * Helper class for Derby.
@@ -34,7 +33,6 @@ import com.ibm.ws.jdbc.heritage.AccessIntent;
 public class DerbyHelper extends DatabaseHelper {
     @SuppressWarnings("deprecation")
     protected static final com.ibm.ejs.ras.TraceComponent derbyTc = com.ibm.ejs.ras.Tr.register("com.ibm.ws.derby.logwriter", "WAS.database", null); // rename 
-    private transient PrintWriter derbyPw = null; 
 
     /**
      * Construct a helper class for Derby.
@@ -45,6 +43,7 @@ public class DerbyHelper extends DatabaseHelper {
     DerbyHelper(WSManagedConnectionFactoryImpl mcf) {
         super(mcf);
 
+        mcf.defaultIsolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
         mcf.supportsGetTypeMap = false;
     }
     
@@ -71,11 +70,6 @@ public class DerbyHelper extends DatabaseHelper {
         stmt.setQueryTimeout(queryTimeout);
     }
 
-    @Override
-    public int getIsolationLevel(AccessIntent unused) {
-        return Connection.TRANSACTION_REPEATABLE_READ;
-    }
-
     /**
      * Returns a trace component for supplemental JDBC driver level trace.
      * 
@@ -91,11 +85,11 @@ public class DerbyHelper extends DatabaseHelper {
         //not synchronizing here since there will be one helper
         // and most likely the setting will be serially, even if its not, 
         // it shouldn't matter here (tracing).
-        if (derbyPw == null) {
-            derbyPw = new java.io.PrintWriter(new TraceWriter(derbyTc), true);
+        if (genPw == null) {
+            genPw = new java.io.PrintWriter(new TraceWriter(derbyTc), true);
         }
-        Tr.debug(derbyTc, "returning", derbyPw);
-        return derbyPw;
+        Tr.debug(derbyTc, "returning", genPw);
+        return genPw;
     }
 
     /**
